@@ -1,0 +1,6 @@
+*.tfstate
+*.tfstate.backup
+.terraform/
+*.tfvars
+project1-key
+project1-key.pub
