@@ -132,8 +132,8 @@ resource "aws_key_pair" "project1_key" {
 resource "aws_instance" "rhel_server" {
   ami                    = data.aws_ami.rhel.id
   instance_type          = "t3.micro"
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.public_sg.id]
+  subnet_id              = aws_subnet.private.id
+  vpc_security_group_ids = [aws_security_group.private_sg.id]
   key_name               = aws_key_pair.project1_key.key_name
 
   tags = {
@@ -149,4 +149,108 @@ output "instance_public_ip" {
 output "instance_id" {
   value       = aws_instance.rhel_server.id
   description = "Instance ID of the RHEL server"
+}
+
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  tags = {
+    Name = "project1-nat-eip"
+  }
+}
+
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public.id
+
+  tags = {
+    Name = "project1-nat-gw"
+  }
+
+  depends_on = [aws_internet_gateway.main]
+}
+
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
+
+  tags = {
+    Name = "project1-private-rt"
+  }
+}
+
+resource "aws_route_table_association" "private" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_security_group" "bastion_sg" {
+  name        = "project1-bastion-sg"
+  description = "Bastion - SSH from my IP only"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description = "SSH from my IP"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["122.171.23.87/32"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "project1-bastion-sg"
+  }
+}
+
+resource "aws_security_group" "private_sg" {
+  name        = "project1-private-sg"
+  description = "Private RHEL server - SSH only from bastion"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "SSH from bastion only"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.bastion_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "project1-private-sg"
+  }
+}
+
+resource "aws_instance" "bastion" {
+  ami                    = data.aws_ami.rhel.id
+  instance_type          = "t3.micro"
+  subnet_id              = aws_subnet.public.id
+  vpc_security_group_ids = [aws_security_group.bastion_sg.id]
+  key_name               = aws_key_pair.project1_key.key_name
+
+  tags = {
+    Name = "project1-bastion"
+  }
+}
+
+output "bastion_public_ip" {
+  value       = aws_instance.bastion.public_ip
+  description = "Public IP of the bastion host"
 }
