@@ -1,0 +1,105 @@
+---
+- name: Harden RHEL server
+  hosts: rhel_servers
+  become: yes
+  tasks:
+    - name: Create a dedicated admin user
+      user:
+        name: aniketh
+        groups: wheel
+        shell: /bin/bash
+        create_home: yes
+
+    - name: Add SSH public key for the new user
+      authorized_key:
+        user: aniketh
+        state: present
+        key: "{{ lookup('file', '~/.ssh/project1-key.pub') }}"
+
+    - name: Allow wheel group passwordless sudo
+      lineinfile:
+        path: /etc/sudoers.d/wheel-nopasswd
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        create: yes
+        validate: 'visudo -cf %s'
+
+    - name: Disable password authentication over SSH
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        validate: '/usr/sbin/sshd -t -f %s'
+
+    - name: Disable direct root SSH login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+        validate: '/usr/sbin/sshd -t -f %s'
+
+    - name: Restart sshd to apply changes
+      service:
+        name: sshd
+        state: restarted
+    
+    - name: Check if swap file already exists
+      stat:
+        path: /swapfile
+      register: swap_file_check
+
+    - name: Create 1GB swap file
+      command: fallocate -l 1G /swapfile
+      when: not swap_file_check.stat.exists
+
+    - name: Set swap file permissions
+      file:
+        path: /swapfile
+        mode: '0600'
+      when: not swap_file_check.stat.exists
+
+    - name: Format swap file
+      command: mkswap /swapfile
+      when: not swap_file_check.stat.exists
+
+    - name: Enable swap file
+      command: swapon /swapfile
+      when: not swap_file_check.stat.exists
+
+    - name: Add swap to fstab for persistence across reboots
+      lineinfile:
+        path: /etc/fstab
+        line: '/swapfile none swap sw 0 0'
+        state: present
+    
+    - name: Install firewalld
+      yum:
+        name: firewalld
+        state: present
+
+    - name: Start and enable firewalld
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
+
+    - name: Allow SSH through firewalld
+      firewalld:
+        service: ssh
+        permanent: yes
+        state: enabled
+        immediate: yes
+
+    - name: Allow HTTP through firewalld
+      firewalld:
+        service: http
+        permanent: yes
+        state: enabled
+        immediate: yes
+    
+    - name: Remove cockpit from firewalld (unused management UI)
+      firewalld:
+        service: cockpit
+        permanent: yes
+        state: disabled
+        immediate: yes
+    

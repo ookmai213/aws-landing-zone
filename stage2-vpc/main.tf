@@ -5,6 +5,14 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket         = "aniketh-terraform-state-bucket-001"
+    key            = "stage2-vpc/terraform.tfstate"
+    region         = "ap-south-1"
+    use_lockfile   = true
+    encrypt        = true
+  }
 }
 
 provider "aws" {
@@ -78,7 +86,7 @@ resource "aws_security_group" "public_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["122.171.20.175/32"]
+    cidr_blocks = ["122.171.23.87/32"]
   }
 
   ingress {
