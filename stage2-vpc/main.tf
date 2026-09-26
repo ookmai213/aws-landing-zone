@@ -86,7 +86,7 @@ resource "aws_security_group" "public_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["122.171.23.87/32"]
+    cidr_blocks = ["122.171.23.224/32"]
   }
 
   ingress {
@@ -198,7 +198,7 @@ resource "aws_security_group" "bastion_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["122.171.23.87/32"]
+    cidr_blocks = ["122.171.23.224/32"]
   }
 
   egress {
