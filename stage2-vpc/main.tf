@@ -7,11 +7,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "aniketh-terraform-state-bucket-001"
-    key            = "stage2-vpc/terraform.tfstate"
-    region         = "ap-south-1"
-    use_lockfile   = true
-    encrypt        = true
+    bucket       = "aniketh-terraform-state-bucket-001"
+    key          = "stage2-vpc/terraform.tfstate"
+    region       = "ap-south-1"
+    use_lockfile = true
+    encrypt      = true
   }
 }
 
@@ -39,9 +39,9 @@ resource "aws_internet_gateway" "main" {
 
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block               = "10.0.1.0/24"
-  availability_zone        = "ap-south-1a"
-  map_public_ip_on_launch  = true
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "ap-south-1a"
+  map_public_ip_on_launch = true
 
   tags = {
     Name = "project1-public-subnet"
@@ -111,7 +111,7 @@ resource "aws_security_group" "public_sg" {
 
 data "aws_ami" "rhel" {
   most_recent = true
-  owners      = ["309956199498"]  # Red Hat's official AWS account
+  owners      = ["309956199498"] # Red Hat's official AWS account
 
   filter {
     name   = "name"
