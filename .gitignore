@@ -4,3 +4,4 @@
 *.tfvars
 project1-key
 project1-key.pub
+stage5-validation/venv/
