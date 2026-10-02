@@ -226,6 +226,14 @@ resource "aws_security_group" "private_sg" {
     security_groups = [aws_security_group.bastion_sg.id]
   }
 
+  ingress {
+    description     = "Prometheus scrape from monitoring server"
+    from_port       = 9100
+    to_port         = 9100
+    protocol        = "tcp"
+    security_groups = ["sg-04ef687df544626c3"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
