@@ -254,3 +254,23 @@ output "bastion_public_ip" {
   value       = aws_instance.bastion.public_ip
   description = "Public IP of the bastion host"
 }
+
+output "vpc_id" {
+  value = aws_vpc.main.id
+}
+
+output "private_subnet_id" {
+  value = aws_subnet.private.id
+}
+
+output "bastion_sg_id" {
+  value = aws_security_group.bastion_sg.id
+}
+
+output "private_sg_id" {
+  value = aws_security_group.private_sg.id
+}
+
+output "project1_key_name" {
+  value = aws_key_pair.project1_key.key_name
+}
