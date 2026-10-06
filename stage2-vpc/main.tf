@@ -19,6 +19,16 @@ provider "aws" {
   region = "ap-south-1"
 }
 
+data "terraform_remote_state" "project2" {
+  backend = "s3"
+
+  config = {
+    bucket = "aniketh-terraform-state-bucket-001"
+    key    = "project2-monitoring/terraform.tfstate"
+    region = "ap-south-1"
+  }
+}
+
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
@@ -231,9 +241,9 @@ resource "aws_security_group" "private_sg" {
     from_port       = 9100
     to_port         = 9100
     protocol        = "tcp"
-    security_groups = ["sg-04ef687df544626c3"]
+    security_groups = [data.terraform_remote_state.project2.outputs.monitoring_sg_id]
   }
-
+  
   egress {
     from_port   = 0
     to_port     = 0
